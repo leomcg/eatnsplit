@@ -1,4 +1,4 @@
-import { Linter } from "eslint";
+import { useState } from "react";
 
 const initialFriends = [
   {
@@ -21,21 +21,42 @@ const initialFriends = [
   },
 ];
 
+function Button({ children, onClick = () => null }) {
+  return (
+    <button className="button" onClick={onClick}>
+      {children}
+    </button>
+  );
+}
+
 export default function App() {
+  const [showAddFriend, setShowAddFriend] = useState(false);
+  const [friends, setFriends] = useState(initialFriends);
+
+  function handleShowAddFriend() {
+    setShowAddFriend((show) => !show);
+  }
+
+  function handleAddFriend(newFriend) {
+    setFriends((friends) => [...friends, newFriend]);
+    setShowAddFriend(false);
+  }
+
   return (
     <div className="app">
       <div className="sidebar">
-        <FriendsList />;
-        <FormAddFriend />
-        <Button>Add friend</Button>
+        <FriendsList friends={friends} />;
+        {showAddFriend && <FormAddFriend onAddFriend={handleAddFriend} />}
+        <Button onClick={handleShowAddFriend}>
+          {showAddFriend ? "Close" : "Add friend"}
+        </Button>
       </div>
       <FormSplitBill />
     </div>
   );
 }
 
-function FriendsList() {
-  const friends = initialFriends;
+function FriendsList({ friends }) {
   return (
     <ul>
       {friends.map((friend) => (
@@ -66,20 +87,55 @@ function Friend({ friend }) {
   );
 }
 
-function FormAddFriend() {
-  return (
-    <form className="form-add-friend">
-      <label>Friend name</label>
-      <input type="text" />
+function FormAddFriend({ onAddFriend }) {
+  const baseURL = "https://i.pravatar.cc/48?u=";
+  const [name, setName] = useState("");
+  const [imageURL, setImageURL] = useState(baseURL);
 
-      <label>City URL</label>
-      <input />
+  function handleAddFriend(e) {
+    e.preventDefault();
+
+    const id = crypto.randomUUID();
+
+    if (!name || !imageURL) return;
+
+    const newFriend = {
+      name,
+      image: imageURL + id,
+      balance: 0,
+      id,
+    };
+
+    onAddFriend(newFriend);
+
+    setName("");
+    setImageURL(baseURL);
+  }
+
+  return (
+    <form className="form-add-friend" onSubmit={handleAddFriend}>
+      <label>Friend name</label>
+      <input
+        type="text"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
+
+      <label>Image URL</label>
+      <input
+        type="text"
+        value={imageURL}
+        onChange={(e) => setImageURL(e.target.value)}
+      />
       <Button>Add</Button>
     </form>
   );
 }
 
 function FormSplitBill() {
+  const [bill, setBill] = useState(0);
+  const [userExpense, setUserExpense] = useState();
+
   return (
     <form className="form-split-bill">
       <h2>Split a bill with X</h2>
@@ -96,8 +152,4 @@ function FormSplitBill() {
       </select>
     </form>
   );
-}
-
-function Button({ children }) {
-  return <button className="button">{children}</button>;
 }
